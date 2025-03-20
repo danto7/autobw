@@ -1,2 +1,5 @@
 .direnv
 .envrc
+# Added by goreleaser init:
+dist/
+autobw
