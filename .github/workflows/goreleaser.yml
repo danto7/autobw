@@ -1,22 +1,30 @@
 name: goreleaser
 
 on:
-  pull_request:
   push:
+    tags:
+      - "*"
 
 permissions:
   contents: write
 
 jobs:
   goreleaser:
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [macos-latest]
+      fail-fast: true
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Set up Nix
-        uses: cachix/install-nix-action@v31
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
+      - run: go version
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
         with:
@@ -27,5 +35,8 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Your GoReleaser Pro key, if you are using the 'goreleaser-pro' distribution
-          # GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
+      - name: Upload assets
+        uses: actions/upload-artifact@v4
+        with:
+          name: autobw
+          path: dist/*
