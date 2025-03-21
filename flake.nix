@@ -2,7 +2,7 @@
   description = "development flake";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";
     utils.url = "github:numtide/flake-utils";
   };
 
@@ -28,7 +28,7 @@
         };
         defaultPackage = buildGoModule rec {
           pname = "autobw";
-          version = "0.3.4";
+          version = "0.0.1";
 
           src = builtins.path {
             path = ./.;
