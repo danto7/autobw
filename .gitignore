@@ -3,3 +3,6 @@
 # Added by goreleaser init:
 dist/
 autobw
+
+# nix
+/result

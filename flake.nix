@@ -3,15 +3,35 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";
+    unstable.url = "github:NixOS/nixpkgs";
     utils.url = "github:numtide/flake-utils";
   };
 
   outputs =
-    { nixpkgs, utils, ... }:
+    {
+      nixpkgs,
+      unstable,
+      utils,
+      ...
+    }:
     utils.lib.eachDefaultSystem (
       system:
       let
-        pkgs = import nixpkgs { inherit system; };
+        pkgs = import nixpkgs {
+          inherit system;
+        };
+        unstablePkgs = import unstable {
+          inherit system;
+          # bitwarden-cli is broken. Fix: https://github.com/NixOS/nixpkgs/issues/339576#issuecomment-2574076670
+          overlays = [
+            (final: prev: {
+              bitwarden-cli = prev.bitwarden-cli.overrideAttrs (oldAttrs: {
+                nativeBuildInputs = (oldAttrs.nativeBuildInputs or [ ]) ++ [ prev.llvmPackages_18.stdenv.cc ];
+                stdenv = prev.llvmPackages_18.stdenv;
+              });
+            })
+          ];
+        };
       in
       with nixpkgs.legacyPackages.${system};
       {
@@ -23,12 +43,17 @@
               # docker-client
               go
               goreleaser
+              unstablePkgs.bitwarden-cli
             ];
           };
         };
         defaultPackage = buildGoModule rec {
           pname = "autobw";
           version = "0.0.1";
+
+          preBuild = ''
+            echo "${unstablePkgs.bitwarden-cli}" > bitwarden-cli
+          '';
 
           src = builtins.path {
             path = ./.;
