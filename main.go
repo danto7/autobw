@@ -5,15 +5,15 @@ import (
 	"log/slog"
 	"os"
 	"os/exec"
+	"time"
 
-	"github.com/keybase/go-keychain"
+	"github.com/danto7/autobw/build"
+	"github.com/danto7/autobw/state"
 )
-
-const DEBUG = false
 
 func main() {
 	lvl := new(slog.LevelVar)
-	if DEBUG {
+	if build.Debug {
 		lvl.Set(slog.LevelDebug)
 	} else {
 		lvl.Set(slog.LevelInfo)
@@ -23,23 +23,41 @@ func main() {
 	}))
 	slog.SetDefault(l)
 
-	secret, err := getSecret()
-	if err == keychain.ErrorItemNotFound {
+	var s state.State
+	err := s.Load()
+	if err == state.ErrorNotFound {
 		slog.Debug("No session found")
 	} else if err != nil {
 		slog.Error("Error getting secret", "err", err.Error())
 		panic(err)
 	}
-	session := string(secret)
+
+	if time.Now().Sub(s.LastUnlock) > s.UnlockTimeout {
+		switch confirmIdentity() {
+		case ErrorAuthenticationFailed:
+			slog.Error("Authentication failed")
+			return
+		case ErrorAuthenticationTimedOut:
+			slog.Error("Authentication timed out")
+			return
+		}
+
+		slog.Debug("Identity confirmed, updating lastUnlock in state")
+		s.LastUnlock = time.Now()
+		if err := s.Write(); err != nil {
+			slog.Error("Error updating state")
+			panic(err)
+		}
+	}
 
 	args := os.Args[1:]
-	if isUnlocked(session) {
+	if isUnlocked(s.BitwardenSession) {
 		slog.Debug("Already unlocked", "bw args", args)
-		run(args, session)
+		run(args, s.BitwardenSession)
 		return
 	}
 
-	status, err := status(session)
+	status, err := status(s.BitwardenSession)
 	if err != nil {
 		slog.Error("Error getting status", "err", err.Error())
 		panic(err)
@@ -47,8 +65,7 @@ func main() {
 	slog.Debug("Bitwarden status", "status", status.Status, "lastSync", status.LastSync, "serverUrl", status.ServerUrl, "userId", status.UserId)
 	switch status.Status {
 	case "locked":
-		session, err := unlock()
-		if errors.Is(err, ErrorCanceledByUser) {
+		if err := unlock(&s); errors.Is(err, ErrorCanceledByUser) {
 			slog.Error("Unlock canceled by user")
 			os.Exit(1)
 		} else if err != nil {
@@ -56,7 +73,7 @@ func main() {
 			os.Exit(1)
 		}
 		slog.Debug("Unlock successfull", "bw args", args)
-		run(args, session)
+		run(args, s.BitwardenSession)
 	default:
 		// TODO: implement info if is not logged in
 		slog.Error("Unknown status", "status", status.Status)

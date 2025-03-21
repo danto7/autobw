@@ -1,2 +1,4 @@
+github.com/aethiopicuschan/touchid-go v1.0.0 h1:y0ph3xxZ4b6YuUZbuM11EEq8WevQSyFVLRtcHE69GDA=
+github.com/aethiopicuschan/touchid-go v1.0.0/go.mod h1:X85w5asdAMAMnCooWy2kPe0WZ4j46rDzkXMPOveEVRs=
 github.com/keybase/go-keychain v0.0.1 h1:way+bWYa6lDppZoZcgMbYsvC7GxljxrskdNInRtuthU=
 github.com/keybase/go-keychain v0.0.1/go.mod h1:PdEILRW3i9D8JcdM+FmY6RwkHGnhHxXwkPPMeUgOK1k=
