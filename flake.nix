@@ -49,7 +49,7 @@
         };
         defaultPackage = buildGoModule rec {
           pname = "autobw";
-          version = "0.0.1";
+          version = "0.0.2";
 
           preBuild = ''
             echo "${unstablePkgs.bitwarden-cli}" > bitwarden-cli
@@ -60,7 +60,7 @@
             name = "${pname}-src";
           };
 
-          vendorHash = "sha256-kUZ2CxKfx/QeKXxix24Ld9lK50MEENuH5HS9gWY8zZo=";
+          vendorHash = "sha256-gnbZiWGWoMuZgs4IssDIQdHjzT2biPlyjdhBxz3wN0o=";
 
           meta = {
             description = "Command line tool to manage Bitwarden cli sessions in the keychain";
