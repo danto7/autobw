@@ -101,7 +101,7 @@ func run(args []string, session string) {
 	cmd.Env = append(os.Environ(), "BW_SESSION="+session)
 	err := cmd.Run()
 	if exitError, ok := err.(*exec.ExitError); ok {
-		slog.Error("bw not found in path")
+		slog.Debug("bw exited with non zero exit code", "exit code", exitError.ExitCode())
 		os.Exit(exitError.ExitCode())
 	} else if err != nil {
 		slog.Error("Error running bw", "err", err.Error())
