@@ -69,6 +69,7 @@
             maintainers = with lib.maintainers; [ danto7 ];
           };
         };
+        packages.bitwarden-cli = unstablePkgs.bitwarden-cli;
       }
     );
 }
