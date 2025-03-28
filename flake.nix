@@ -12,6 +12,7 @@
       nixpkgs,
       unstable,
       utils,
+      self,
       ...
     }:
     utils.lib.eachDefaultSystem (
@@ -49,11 +50,7 @@
         };
         defaultPackage = buildGoModule rec {
           pname = "autobw";
-          version = "0.0.2";
-
-          preBuild = ''
-            echo "${unstablePkgs.bitwarden-cli}" > bitwarden-cli
-          '';
+          version = "0.1.1";
 
           src = builtins.path {
             path = ./.;
@@ -61,7 +58,8 @@
 
           };
           ldflags = [
-            "-X main.bwVersion=${unstablePkgs.bitwarden-cli}"
+            "-X main.bwBinary=${unstablePkgs.bitwarden-cli}/bin/bw"
+            "-X main.version=${version} -X main.commit=${self.rev or "dirty"} -X main.date=unknown"
           ];
 
           vendorHash = "sha256-gnbZiWGWoMuZgs4IssDIQdHjzT2biPlyjdhBxz3wN0o=";

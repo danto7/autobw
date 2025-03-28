@@ -38,7 +38,7 @@ func main() {
 	for _, arg := range args {
 		if slices.Contains(bypassFlags, arg) {
 			if arg == "-v" || arg == "--version" {
-				fmt.Printf("autobw %s, commit %s, built at %s\n", version, commit, date)
+				fmt.Printf("autobw %s, commit %s\n", version, commit)
 			}
 			run(args, "")
 			return
