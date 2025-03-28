@@ -7,22 +7,15 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/danto7/autobw/build"
 	"github.com/keybase/go-keychain"
 )
 
 const service = "autobw"
 const accessGroup = "autobw.danto7.com.github"
+const keychainSuffix = ""
 
-var account = "default"
-var label = "autobw session"
-
-func init() {
-	if build.Debug {
-		label += " (debug)"
-		account += " (debug)"
-	}
-}
+var account = "default" + keychainSuffix
+var label = "autobw session" + keychainSuffix
 
 func buildItem() keychain.Item {
 	item := keychain.NewItem()
@@ -67,11 +60,6 @@ func (s *State) Write() error {
 	}
 
 	item.SetData(data)
-	if build.Debug {
-		// set to always accessible for debugging
-		// otherwise the keychain needs to be unlocked after every recompile on macos
-		item.SetAccessible(keychain.AccessibleAlways)
-	}
 	err = keychain.AddItem(item)
 	if !errors.Is(err, keychain.ErrorDuplicateItem) {
 		return err

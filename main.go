@@ -7,15 +7,20 @@ import (
 	"os/exec"
 	"time"
 
-	"github.com/danto7/autobw/build"
 	"github.com/danto7/autobw/state"
 )
 
-const bwBinary = "bw"
+var (
+	version  = "dev"
+	commit   = "none"
+	date     = "unknown"
+	debug    = version == "dev"
+	bwBinary = "bw"
+)
 
 func main() {
 	lvl := new(slog.LevelVar)
-	if build.Debug {
+	if debug {
 		lvl.Set(slog.LevelDebug)
 	} else {
 		lvl.Set(slog.LevelInfo)
