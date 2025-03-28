@@ -2,9 +2,11 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"log/slog"
 	"os"
 	"os/exec"
+	"slices"
 	"time"
 
 	"github.com/danto7/autobw/state"
@@ -29,6 +31,19 @@ func main() {
 		Level: lvl,
 	}))
 	slog.SetDefault(l)
+
+	args := os.Args[1:]
+
+	var bypassFlags = []string{"-h", "--help", "--version", "-v"}
+	for _, arg := range args {
+		if slices.Contains(bypassFlags, arg) {
+			if arg == "-v" || arg == "--version" {
+				fmt.Printf("autobw %s, commit %s, built at %s\n", version, commit, date)
+			}
+			run(args, "")
+			return
+		}
+	}
 
 	var s state.State
 	err := s.Load()
@@ -57,7 +72,6 @@ func main() {
 		}
 	}
 
-	args := os.Args[1:]
 	if isUnlocked(s.BitwardenSession) {
 		slog.Debug("Already unlocked", "bw args", args)
 		run(args, s.BitwardenSession)
