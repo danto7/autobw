@@ -11,6 +11,8 @@ import (
 	"github.com/danto7/autobw/state"
 )
 
+const bwBinary = "bw"
+
 func main() {
 	lvl := new(slog.LevelVar)
 	if build.Debug {
@@ -82,7 +84,7 @@ func main() {
 }
 
 func isUnlocked(session string) bool {
-	cmd := exec.Command("bw", "unlock", "--check")
+	cmd := exec.Command(bwBinary, "unlock", "--check")
 	cmd.Env = append(os.Environ(), "BW_SESSION="+session)
 	err := cmd.Run()
 	if _, ok := err.(*exec.ExitError); ok {
@@ -94,8 +96,8 @@ func isUnlocked(session string) bool {
 }
 
 func run(args []string, session string) {
-	cmd := exec.Command("bw")
-	cmd.Args = append([]string{"--nointeraction"}, args...)
+	cmd := exec.Command(bwBinary, "--nointeraction")
+	cmd.Args = append(cmd.Args, args...)
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = os.Stdout
 	cmd.Env = append(os.Environ(), "BW_SESSION="+session)

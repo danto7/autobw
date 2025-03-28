@@ -58,7 +58,11 @@
           src = builtins.path {
             path = ./.;
             name = "${pname}-src";
+
           };
+          ldflags = [
+            "-X main.bwVersion=${unstablePkgs.bitwarden-cli}"
+          ];
 
           vendorHash = "sha256-gnbZiWGWoMuZgs4IssDIQdHjzT2biPlyjdhBxz3wN0o=";
 

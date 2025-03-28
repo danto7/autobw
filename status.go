@@ -18,7 +18,7 @@ type BitwardenStatus struct {
 func status(session string) (*BitwardenStatus, error) {
 	stdout := new(bytes.Buffer)
 
-	cmd := exec.Command("bw", "status")
+	cmd := exec.Command(bwBinary, "status")
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = stdout
 	cmd.Env = append(os.Environ(), "BW_SESSION="+session)

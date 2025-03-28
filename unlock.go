@@ -18,7 +18,7 @@ func unlock(state *state.State) error {
 		return err
 	}
 
-	cmd := exec.Command("bw", "--nointeraction", "unlock", "--passwordenv", passwordEnv, "--raw")
+	cmd := exec.Command(bwBinary, "--nointeraction", "unlock", "--passwordenv", passwordEnv, "--raw")
 	cmd.Env = append(os.Environ(), passwordEnv+"="+password)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
