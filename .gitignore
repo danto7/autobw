@@ -6,3 +6,4 @@ autobw
 
 # nix
 /result
+.pre-commit-config.yaml

@@ -5,6 +5,7 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";
     unstable.url = "github:NixOS/nixpkgs";
     utils.url = "github:numtide/flake-utils";
+    nix-pre-commit.url = "github:jmgilman/nix-pre-commit";
   };
 
   outputs =
@@ -13,6 +14,7 @@
       unstable,
       utils,
       self,
+      nix-pre-commit,
       ...
     }:
     utils.lib.eachDefaultSystem (
@@ -33,11 +35,48 @@
             })
           ];
         };
+        config = {
+          repos = [
+            {
+              repo = "local";
+              hooks = [
+                # {
+                #   id = "nixpkgs-fmt";
+                #   entry = "${pkgs.nixpkgs-fmt}/bin/nixpkgs-fmt";
+                #   language = "system";
+                #   files = "\\.nix";
+                # }
+                {
+                  id = "version-lint";
+                  entry = "bash ${builtins.toFile "version-lint.sh" ''
+                    set -eo pipefail
+                    git_tag="$(git tag --points-at HEAD)"
+                    if test -z "$git_tag"; then
+                      echo "version-lint: No new version found on this commit." >&2
+                      exit 0
+                    fi
+                    flake_version="$(grep -E "[0-9]+\.[0-9]+\.[0-9]+" flake.nix --only-matching)"
+                    if test "$git_tag" != "v$flake_version"; then
+                      echo "version-lint: Version in flake.nix ($flake_version) does not match git tag ($git_tag)" >&2
+                      exit 1
+                    fi
+                  ''}";
+                  language = "system";
+                  stages = [ "pre-push" ];
+                }
+              ];
+            }
+          ];
+        };
       in
       with nixpkgs.legacyPackages.${system};
       {
         devShells = {
           default = pkgs.mkShell {
+            shellHook =
+              (nix-pre-commit.lib.${system}.mkConfig {
+                inherit pkgs config;
+              }).shellHook;
             packages = with pkgs; [
               # kubectl
               # minikube
@@ -55,11 +94,11 @@
           src = builtins.path {
             path = ./.;
             name = "${pname}-src";
-
+            filter = path: type: path != ".git";
           };
           ldflags = [
             "-X main.bwBinary=${unstablePkgs.bitwarden-cli}/bin/bw"
-            "-X main.version=${version} -X main.commit=${self.rev or "dirty"} -X main.date=unknown"
+            "-X main.version=${self.rev or "dirty"} -X main.commit=${self.rev or "dirty"} -X main.date=unknown"
           ];
 
           vendorHash = "sha256-gnbZiWGWoMuZgs4IssDIQdHjzT2biPlyjdhBxz3wN0o=";
