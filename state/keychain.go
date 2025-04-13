@@ -12,7 +12,7 @@ import (
 
 const service = "autobw"
 const accessGroup = "autobw.danto7.com.github"
-const keychainSuffix = ""
+const keychainSuffix = "(debug)"
 
 var account = "default" + keychainSuffix
 var label = "autobw session" + keychainSuffix

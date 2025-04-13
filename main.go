@@ -1,15 +1,18 @@
 package main
 
 import (
-	"errors"
+	"context"
 	"fmt"
 	"log/slog"
 	"os"
 	"os/exec"
+	"os/signal"
 	"slices"
+	"syscall"
 	"time"
 
 	"github.com/danto7/autobw/state"
+	"github.com/go-errors/errors"
 )
 
 var (
@@ -32,6 +35,27 @@ func main() {
 	}))
 	slog.SetDefault(l)
 
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
+	err := start(ctx)
+	if err != nil {
+		if err, ok := err.(*errors.Error); ok {
+			fmt.Println()
+			fmt.Println(err.ErrorStack())
+			exitError := exec.ExitError{}
+			if errors.As(err, &exitError) {
+				os.Exit(exitError.ExitCode())
+			}
+			os.Exit(1)
+		} else {
+			panic(err)
+		}
+		panic("unreachable")
+	}
+}
+
+func start(ctx context.Context) error {
 	args := os.Args[1:]
 
 	var bypassFlags = []string{"-h", "--help", "--version", "-v"}
@@ -40,8 +64,7 @@ func main() {
 			if arg == "-v" || arg == "--version" {
 				fmt.Printf("autobw %s, commit %s\n", version, commit)
 			}
-			run(args, "")
-			return
+			return errors.Wrap(run(ctx, args, ""), 0)
 		}
 	}
 
@@ -50,55 +73,46 @@ func main() {
 	if err == state.ErrorNotFound {
 		slog.Debug("No session found")
 	} else if err != nil {
-		slog.Error("Error getting secret", "err", err.Error())
-		panic(err)
+		return errors.Errorf("Error loading state: %w", err)
 	}
 
 	if time.Now().Sub(s.LastUnlock) > s.UnlockTimeout {
-		switch confirmIdentity() {
+		switch confirmIdentity(ctx) {
 		case ErrorAuthenticationFailed:
-			slog.Error("Authentication failed")
-			return
+			return errors.Errorf("Authentication failed")
 		case ErrorAuthenticationTimedOut:
-			slog.Error("Authentication timed out")
-			return
+			return errors.Errorf("Authentication timed out")
 		}
 
 		slog.Debug("Identity confirmed, updating lastUnlock in state")
 		s.LastUnlock = time.Now()
 		if err := s.Write(); err != nil {
-			slog.Error("Error updating state")
-			panic(err)
+			return errors.Errorf("Error updating state: %w", err)
 		}
 	}
 
 	if isUnlocked(s.BitwardenSession) {
 		slog.Debug("Already unlocked", "bw args", args)
-		run(args, s.BitwardenSession)
-		return
+		return errors.Wrap(run(ctx, args, s.BitwardenSession), 0)
 	}
 
 	status, err := status(s.BitwardenSession)
 	if err != nil {
-		slog.Error("Error getting status", "err", err.Error())
-		panic(err)
+		return errors.Errorf("Error getting status: %w", err)
 	}
 	slog.Debug("Bitwarden status", "status", status.Status, "lastSync", status.LastSync, "serverUrl", status.ServerUrl, "userId", status.UserId)
 	switch status.Status {
 	case "locked":
 		if err := unlock(&s); errors.Is(err, ErrorCanceledByUser) {
-			slog.Error("Unlock canceled by user")
-			os.Exit(1)
+			return errors.Errorf("Unlock canceled by user: %w", err)
 		} else if err != nil {
-			slog.Error("Error unlocking", "err", err.Error())
-			os.Exit(1)
+			return errors.Errorf("Error unlocking: %w", err)
 		}
 		slog.Debug("Unlock successfull", "bw args", args)
-		run(args, s.BitwardenSession)
+		return errors.Wrap(run(ctx, args, s.BitwardenSession), 0)
 	default:
 		// TODO: implement info if is not logged in
-		slog.Error("Unknown status", "status", status.Status)
-		os.Exit(1)
+		return errors.Errorf("Unknown status: %s", status.Status)
 	}
 }
 
@@ -114,18 +128,26 @@ func isUnlocked(session string) bool {
 	return true
 }
 
-func run(args []string, session string) {
-	cmd := exec.Command(bwBinary, "--nointeraction")
+func run(ctx context.Context, args []string, session string) error {
+	if len(args) > 0 && args[0] == "agent" {
+		err := startListener(ctx, session)
+		if err != nil {
+			return errors.Errorf("failed to start agent: %w", err)
+		}
+		return nil
+	}
+
+	cmd := exec.CommandContext(ctx, bwBinary, "--nointeraction")
 	cmd.Args = append(cmd.Args, args...)
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = os.Stdout
 	cmd.Env = append(os.Environ(), "BW_SESSION="+session)
+
 	err := cmd.Run()
 	if exitError, ok := err.(*exec.ExitError); ok {
-		slog.Debug("bw exited with non zero exit code", "exit code", exitError.ExitCode())
-		os.Exit(exitError.ExitCode())
+		return errors.Errorf("bw exited with non zero exit code %d: %w", exitError.ExitCode(), exitError)
 	} else if err != nil {
-		slog.Error("Error running bw", "err", err.Error())
-		os.Exit(1)
+		return errors.Errorf("error running bw: %w", err)
 	}
+	return nil
 }

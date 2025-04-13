@@ -25,6 +25,7 @@ builds:
     ldflags:
       - "-s -w -X main.version={{.Version}} -X main.commit={{.ShortCommit}} -X main.date={{.Date}}"
       - "{{if .IsSnapshot}}-X state.keychainSuffix=(debug){{end}}"
+      - "-X state.keychainSuffix=''"
 
 archives:
   - format: tar.gz

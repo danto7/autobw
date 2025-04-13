@@ -12,8 +12,8 @@ import (
 var ErrorAuthenticationFailed = fmt.Errorf("Authentication failed")
 var ErrorAuthenticationTimedOut = fmt.Errorf("Authentication timed out")
 
-func confirmIdentity() error {
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+func confirmIdentity(ctx context.Context) error {
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
 	ok, err := touchid.Authenticate(ctx, "confirm that it's you")

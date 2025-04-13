@@ -89,7 +89,7 @@
         };
         defaultPackage = buildGoModule rec {
           pname = "autobw";
-          version = "0.1.1";
+          version = "git";
 
           src = builtins.path {
             path = ./.;
@@ -98,7 +98,8 @@
           };
           ldflags = [
             "-X main.bwBinary=${unstablePkgs.bitwarden-cli}/bin/bw"
-            "-X main.version=${self.rev or "dirty"} -X main.commit=${self.rev or "dirty"} -X main.date=unknown"
+            "-X main.version=${version} -X main.commit=${self.rev or "dirty"} -X main.date=unknown"
+            "-X state.keychainSuffix=''"
           ];
 
           vendorHash = "sha256-gnbZiWGWoMuZgs4IssDIQdHjzT2biPlyjdhBxz3wN0o=";
