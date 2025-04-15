@@ -102,7 +102,7 @@
             "-X state.keychainSuffix=''"
           ];
 
-          vendorHash = "sha256-gnbZiWGWoMuZgs4IssDIQdHjzT2biPlyjdhBxz3wN0o=";
+          vendorHash = "sha256-Ti4xu2NNsGALcGjuvZc69gsfaCRkbEfhfZKIM8nNPjM=";
 
           meta = {
             description = "Command line tool to manage Bitwarden cli sessions in the keychain";
