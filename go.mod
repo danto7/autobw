@@ -1,14 +1,14 @@
 module github.com/danto7/autobw
 
-go 1.23.5
+go 1.26.0
 
 require (
 	github.com/aethiopicuschan/touchid-go v1.0.0
 	github.com/keybase/go-keychain v0.0.1
-	golang.org/x/crypto v0.39.0
+	golang.org/x/crypto v0.56.0
 )
 
 require (
 	github.com/go-errors/errors v1.5.1
-	golang.org/x/sys v0.33.0 // indirect
+	golang.org/x/sys v0.47.0 // indirect
 )
